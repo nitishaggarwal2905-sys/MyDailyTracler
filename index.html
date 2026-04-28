@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyDailyTracler</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>MyDailyTracler</h1>
+    <p class="tagline">Track your time. Reclaim your week.</p>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="today">Today</button>
+    <button class="tab" data-tab="history">History</button>
+    <button class="tab" data-tab="report">Weekly Report</button>
+  </nav>
+
+  <main>
+    <!-- TODAY TAB -->
+    <section id="today" class="tab-content active">
+      <div class="active-timer-banner" id="active-timer-banner" hidden>
+        <div>
+          <span class="active-timer-label">Tracking:</span>
+          <strong id="active-timer-category"></strong>
+          <span id="active-timer-elapsed">00:00:00</span>
+        </div>
+        <button id="stop-timer-btn" class="btn-danger">Stop & Log</button>
+      </div>
+
+      <h2>Quick Track</h2>
+      <p class="hint">Tap a category to start the timer. Tap "Stop & Log" when you're done.</p>
+      <div class="category-grid" id="quick-track-grid"></div>
+
+      <h2>Add Manually</h2>
+      <p class="hint">Already done? Log it directly.</p>
+      <form id="manual-entry-form" class="manual-form">
+        <div class="form-row">
+          <label>
+            Category
+            <select id="manual-category" required></select>
+          </label>
+          <label>
+            Minutes
+            <input type="number" id="manual-minutes" min="1" step="1" required placeholder="e.g. 45" />
+          </label>
+        </div>
+        <div class="form-row">
+          <label>
+            When
+            <input type="datetime-local" id="manual-when" />
+          </label>
+          <label>
+            Note (optional)
+            <input type="text" id="manual-note" placeholder="What were you doing?" />
+          </label>
+        </div>
+        <button type="submit" class="btn-primary">Add Entry</button>
+      </form>
+
+      <h2>Today's Log</h2>
+      <div id="today-summary" class="day-summary"></div>
+      <ul id="today-entries" class="entry-list"></ul>
+    </section>
+
+    <!-- HISTORY TAB -->
+    <section id="history" class="tab-content">
+      <h2>History</h2>
+      <p class="hint">Browse past days. Edit or delete any entry.</p>
+      <div id="history-list"></div>
+    </section>
+
+    <!-- REPORT TAB -->
+    <section id="report" class="tab-content">
+      <h2>Weekly Report</h2>
+      <div class="week-nav">
+        <button id="prev-week" class="btn-ghost">&larr; Previous</button>
+        <strong id="week-range"></strong>
+        <button id="next-week" class="btn-ghost">Next &rarr;</button>
+      </div>
+      <div id="report-content"></div>
+    </section>
+  </main>
+
+  <footer>
+    <button id="export-btn" class="btn-ghost">Export Data</button>
+    <button id="import-btn" class="btn-ghost">Import Data</button>
+    <input type="file" id="import-file" accept="application/json" hidden />
+    <button id="clear-btn" class="btn-ghost danger">Clear All</button>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
