@@ -1,6 +1,6 @@
 # MyDailyTracler
 
-A simple, fast, no-backend website to track your day-to-day time usage and get a weekly productivity report.
+A simple, fast website to track your day-to-day time usage and get a weekly productivity report. Local-first; optionally syncs to Supabase so your data follows you across devices.
 
 ## Features
 
@@ -30,6 +30,62 @@ Or open `index.html` directly in a browser.
 - `index.html` — markup and tab structure
 - `styles.css` — dark UI, mobile-friendly
 - `app.js` — all logic (timer, storage, history, report, insights)
+- `config.js` — paste your Supabase URL + anon key here
+- `sync.js` — Supabase sync layer (no-op if config is empty)
+- `supabase/schema.sql` — table + row-level-security setup
+- `vercel.json` — Vercel deployment config
+
+## Get your files locally
+
+In a terminal on your computer:
+
+```bash
+cd ~/Desktop
+git clone https://github.com/nitishaggarwal2905-sys/MyDailyTracler.git tracker
+cd tracker
+git checkout claude/activity-time-tracker-AfzIq
+```
+
+You'll have a `tracker/` folder on your desktop with everything.
+
+## Connect Supabase (so data persists across devices)
+
+1. Sign up at <https://supabase.com> and create a new project (free tier is fine).
+2. In **Project Settings → API**, copy the **Project URL** and **anon public** key.
+3. Open `config.js` and paste them in:
+   ```js
+   window.SUPABASE_CONFIG = {
+     url: "https://xxxxx.supabase.co",
+     anonKey: "eyJhbGci...",
+   };
+   ```
+4. In the Supabase dashboard, open **SQL Editor → New query**, paste the contents of `supabase/schema.sql`, and click **Run**.
+5. In **Authentication → Providers**, enable **Anonymous Sign-Ins** (toggle on, save). This lets the app create an identity for you on first load — no login screen.
+6. Reload the site. The badge under the title should turn green and say **Synced**.
+
+If `config.js` is left blank, the app keeps running entirely in localStorage (offline-only mode). Nothing breaks.
+
+## Deploy to Vercel
+
+**Option A — via the Vercel dashboard (easiest):**
+
+1. Push the repo to GitHub (already done).
+2. Go to <https://vercel.com/new> and **Import** the `MyDailyTracler` repo.
+3. Framework preset: **Other** (it's a static site).
+4. Root directory: leave as `./`. Build command and output directory: leave blank.
+5. Click **Deploy**. You'll get a `*.vercel.app` URL.
+
+**Option B — via CLI:**
+
+```bash
+npm i -g vercel
+cd ~/Desktop/tracker
+vercel
+# follow prompts; accept defaults
+vercel --prod   # to ship the production URL
+```
+
+Because `config.js` is committed (it only contains *public* anon keys, which is fine — security comes from Supabase Row Level Security), Vercel needs no environment variables. Just deploy.
 
 ## Data
 

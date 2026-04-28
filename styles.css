@@ -42,6 +42,19 @@ header h1 {
   color: var(--muted);
   font-size: 0.9rem;
 }
+#sync-status {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+#sync-status[data-kind="online"] { color: var(--good); border-color: var(--good); }
+#sync-status[data-kind="connecting"] { color: var(--warn); border-color: var(--warn); }
+#sync-status[data-kind="error"] { color: var(--bad); border-color: var(--bad); }
 
 .tabs {
   display: flex;

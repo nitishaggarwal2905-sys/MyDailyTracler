@@ -158,15 +158,17 @@ document.getElementById("manual-entry-form").addEventListener("submit", e => {
   const end = whenInput ? new Date(whenInput) : new Date();
   const start = new Date(end.getTime() - minutes * 60 * 1000);
 
-  entries.push({
+  const newEntry = {
     id: uid(),
     categoryId,
     start: start.toISOString(),
     end: end.toISOString(),
     minutes,
     note,
-  });
+  };
+  entries.push(newEntry);
   saveEntries(entries);
+  syncUpsert(newEntry);
 
   document.getElementById("manual-minutes").value = "";
   document.getElementById("manual-note").value = "";
@@ -193,15 +195,17 @@ function stopTimer() {
   const start = new Date(activeTimer.start);
   const end = new Date();
   const minutes = Math.max(1, Math.round((end - start) / 60000));
-  entries.push({
+  const newEntry = {
     id: uid(),
     categoryId: activeTimer.categoryId,
     start: start.toISOString(),
     end: end.toISOString(),
     minutes,
     note: "",
-  });
+  };
+  entries.push(newEntry);
   saveEntries(entries);
+  syncUpsert(newEntry);
   activeTimer = null;
   saveActiveTimer(null);
   renderQuickTrack();
@@ -298,8 +302,10 @@ function renderEntryList(list, container) {
   container.querySelectorAll("[data-delete]").forEach(btn => {
     btn.addEventListener("click", () => {
       if (confirm("Delete this entry?")) {
-        entries = entries.filter(e => e.id !== btn.dataset.delete);
+        const id = btn.dataset.delete;
+        entries = entries.filter(e => e.id !== id);
         saveEntries(entries);
+        syncDelete(id);
         renderToday();
         renderHistory();
       }
@@ -324,6 +330,7 @@ function editEntry(id) {
   // Adjust end so duration matches; keep start fixed
   entry.end = new Date(new Date(entry.start).getTime() + m * 60000).toISOString();
   saveEntries(entries);
+  syncUpsert(entry);
   renderToday();
   renderHistory();
 }
@@ -584,8 +591,15 @@ document.getElementById("import-file").addEventListener("change", e => {
       if (!Array.isArray(data.entries)) throw new Error("Invalid file");
       if (!confirm(`Import ${data.entries.length} entries? This will merge with existing data.`)) return;
       const existingIds = new Set(entries.map(x => x.id));
-      data.entries.forEach(x => { if (!existingIds.has(x.id)) entries.push(x); });
+      const added = [];
+      data.entries.forEach(x => {
+        if (!existingIds.has(x.id)) {
+          entries.push(x);
+          added.push(x);
+        }
+      });
       saveEntries(entries);
+      added.forEach(syncUpsert);
       renderToday();
       renderHistory();
       alert("Import complete.");
@@ -600,23 +614,55 @@ document.getElementById("import-file").addEventListener("change", e => {
 document.getElementById("clear-btn").addEventListener("click", () => {
   if (!confirm("Delete ALL entries? This cannot be undone.")) return;
   if (!confirm("Are you absolutely sure? Consider exporting first.")) return;
+  const idsToDelete = entries.map(e => e.id);
   entries = [];
   saveEntries(entries);
   saveActiveTimer(null);
   activeTimer = null;
+  idsToDelete.forEach(syncDelete);
   renderToday();
   renderHistory();
   renderTimerBanner();
   renderQuickTrack();
 });
 
+// ===== Sync helpers =====
+function syncUpsert(entry) {
+  if (window.MDTSync && window.MDTSync.isEnabled()) window.MDTSync.pushUpsert(entry);
+}
+function syncDelete(id) {
+  if (window.MDTSync && window.MDTSync.isEnabled()) window.MDTSync.pushDelete(id);
+}
+
+function mergeRemote(remoteEntries) {
+  const byId = new Map(entries.map(e => [e.id, e]));
+  remoteEntries.forEach(r => byId.set(r.id, r));
+  entries = Array.from(byId.values());
+  saveEntries(entries);
+  renderToday();
+  if (document.getElementById("history").classList.contains("active")) renderHistory();
+  if (document.getElementById("report").classList.contains("active")) renderReport();
+}
+
 // ===== Init =====
-function init() {
+async function init() {
   document.getElementById("manual-when").value = nowLocalDatetimeInputValue();
   renderManualCategoryOptions();
   renderQuickTrack();
   renderTimerBanner();
   renderToday();
+
+  if (window.MDTSync) {
+    let remoteIds = new Set();
+    const result = await window.MDTSync.init(remote => {
+      remoteIds = new Set(remote.map(r => r.id));
+      mergeRemote(remote);
+    });
+    // First-time seed: push local-only entries up to the server.
+    if (result.enabled) {
+      entries.forEach(e => { if (!remoteIds.has(e.id)) syncUpsert(e); });
+    }
+  }
 }
 
 init();
